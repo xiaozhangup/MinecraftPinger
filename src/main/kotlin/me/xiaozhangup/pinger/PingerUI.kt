@@ -8,12 +8,12 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.net.URL
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.imageio.ImageIO
 import javax.swing.*
+
 
 class PingerUI(
     address: InetAddress,
@@ -26,7 +26,10 @@ class PingerUI(
     private val width = 200
     private val height = 100
 
-    private val textArea = JTextArea()
+    private val title = JLabel("MinecraftPinger", SwingConstants.CENTER)
+    private val label = JLabel("获取数据中...", SwingConstants.CENTER)
+    private val version = JLabel("", SwingConstants.CENTER)
+    private val time = JLabel("", SwingConstants.CENTER)
     private val ping = ServerPing(InetSocketAddress(address, port))
 
     init {
@@ -59,24 +62,24 @@ class PingerUI(
 
         // 添加鼠标滚轮事件监听器
         addMouseWheelListener { e -> // 获取鼠标滚轮滚动的单位值
-            val scrollAmount = e.unitsToScroll
-
+//            val scrollAmount = e.unitsToScroll
             // 根据滚动方向调整缩放比例
-            if (scrollAmount < 0) {
-                scale *= 1.1
-            } else {
-                scale *= 0.9
-            }
-
-            // 设置窗口的缩放比例
-            val scaledWidth = (width * scale).toInt()
-            val scaledHeight = (height * scale).toInt()
-            setSize(scaledWidth, scaledHeight)
-            shape = makeShape(scaledWidth, scaledHeight)
+//            if (scrollAmount < 0) {
+//                if (scale <= 1.2) scale *= 1.1
+//            } else {
+//                if (scale >= 1.1) scale *= 0.9
+//            }
+//
+//            // 设置窗口的缩放比例
+//            val scaledWidth = (width * scale).toInt()
+//            val scaledHeight = (height * scale).toInt()
+//            setSize(scaledWidth, scaledHeight)
+//            shape = makeShape(scaledWidth, scaledHeight)
         }
 
         // 设置界面元素
         layout = BorderLayout()
+        add(title, BorderLayout.NORTH)
         add(refreshButton(this), BorderLayout.SOUTH)
 
         // 创建图标
@@ -90,21 +93,9 @@ class PingerUI(
         iconLabel.setBounds(10, 10, icon.iconWidth, icon.iconHeight)
         iconLabel.background = Color.LIGHT_GRAY
         iconLabel.cursor = Cursor(Cursor.MOVE_CURSOR)
+        iconLabel.border = BorderFactory.createLineBorder(Color.LIGHT_GRAY)
 
-        // 创建文字区域
-        textArea.text = "获取数据中..."
-
-        // 设置文字区域的位置和大小
-        textArea.setBounds(150, 10, width, height)
-        textArea.background = Color.WHITE
-        textArea.foreground = Color.BLACK
-
-        textArea.lineWrap = true
-        textArea.wrapStyleWord = true
-        textArea.isEditable = false
-        textArea.dragEnabled = false
-
-        textArea.addKeyListener(object : KeyAdapter() {
+        label.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 // 判断按下的键是否为Esc键
                 if (e.keyCode == KeyEvent.VK_ESCAPE) {
@@ -119,7 +110,12 @@ class PingerUI(
         add(iconLabel, BorderLayout.WEST)
 
         // 添加文字区域到窗口的中部
-        add(textArea, BorderLayout.CENTER)
+        val box = Box.createVerticalBox()
+        box.border = BorderFactory.createLineBorder(Color.LIGHT_GRAY)
+        box.add(label)
+        box.add(version)
+        box.add(time)
+        add(box, BorderLayout.CENTER)
 
         // 设置并显示窗口
         opacity = 0.8f
@@ -135,11 +131,28 @@ class PingerUI(
         thread?.start()
     }
 
-    override fun paint(g: Graphics) {
-        // 开启抗锯齿
-        (g as Graphics2D).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        super.paint(g)
-    }
+//    override fun paint(g: Graphics) {
+//        super.paint(g)
+//        val g2d = g as Graphics2D
+//
+//        // 设置抗锯齿
+//        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+//
+//        // 绘制阴影
+//        val shadowSize = 10
+//        val shadowOffset = 10
+//        g2d.color = Color(0, 0, 0, 128)
+//        g2d.fill(
+//            RoundRectangle2D.Float(
+//                shadowOffset.toFloat(),
+//                shadowOffset.toFloat(),
+//                (getWidth() - shadowSize).toFloat(),
+//                (getHeight() - shadowSize).toFloat(),
+//                20f,
+//                20f
+//            )
+//        )
+//    }
 
     override fun dispose() {
         thread?.interrupt()
@@ -156,7 +169,6 @@ class PingerUI(
             border = BorderFactory.createLineBorder(Color.LIGHT_GRAY)
 
             addActionListener { fetchData(ping) }
-
             addKeyListener(object : KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
                     // 判断按下的键是否为Esc键
@@ -171,7 +183,9 @@ class PingerUI(
 
     private fun fetchData(ping: ServerPing) {
         val result = ping.fetchData()
-        textArea.text = "${result.players.online}/${result.players.max}\n${result.version.name}\n\n${getCurrentTime()}"
+        label.text = "${result.players.online}/${result.players.max}"
+        version.text = result.version.name
+        time.text = getCurrentTime()
     }
 }
 
